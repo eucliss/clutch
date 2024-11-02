@@ -1,0 +1,7 @@
+{
+    "timestamp": "2024-01-01T00:00:00Z",
+    "machine_id": "1234567890",
+    "machine_type": "harvester",
+    "location": "field_1",
+    "status": "running"
+}

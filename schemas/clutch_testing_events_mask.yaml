@@ -1,0 +1,13 @@
+synthetic_count: 3
+masks:
+  - key: "location"
+    operator: "REPLACE"
+    type: "string"
+    input:
+      value: "dummy_field"
+  - key: "machine_id"
+    operator: "RANDOM_INT"
+    type: "string"
+    input:
+      lower_limit: "30"
+      upper_limit: "100"
