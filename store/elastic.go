@@ -13,11 +13,11 @@ import (
 	elasticsearch8 "github.com/elastic/go-elasticsearch/v8"
 )
 
-type StoreConfig struct {
+type ElasticStore struct {
 	Location string // "db/http_ca.crt"
 	Address  string // "https://localhost:9200"
-	username string // "elastic"
-	password string // "MoEO249xSwsNW3oWEc5F"
+	username string
+	password string
 	cfg      elasticsearch8.Config
 	caCert   []byte
 	es       *elasticsearch8.Client
@@ -38,7 +38,7 @@ func contains(slice []string, item string) bool {
 	return false
 }
 
-func (c *StoreConfig) GetIndices() ([]string, error) {
+func (c *ElasticStore) GetIndices() ([]string, error) {
 	res, err := c.es.Indices.Get(
 		[]string{"_all"},
 		c.es.Indices.Get.WithHuman(),
@@ -62,7 +62,7 @@ func (c *StoreConfig) GetIndices() ([]string, error) {
 	return indices, nil
 }
 
-func (c *StoreConfig) IndexExists(indexName string) (bool, error) {
+func (c *ElasticStore) IndexExists(indexName string) (bool, error) {
 	if contains(c.indicies, indexName) {
 		return true, nil
 	}
@@ -73,34 +73,34 @@ func (c *StoreConfig) IndexExists(indexName string) (bool, error) {
 	return true, nil
 }
 
-func (c *StoreConfig) Username() string {
+func (c *ElasticStore) Username() string {
 	return c.username
 }
 
-func (c *StoreConfig) SetUsername(u string) {
+func (c *ElasticStore) SetUsername(u string) {
 	c.username = u
 }
 
-func (c *StoreConfig) SetPassword(p string) {
+func (c *ElasticStore) SetPassword(p string) {
 	c.password = p
 }
 
-func (c *StoreConfig) Cert() []byte {
+func (c *ElasticStore) Cert() []byte {
 	return c.caCert
 }
 
-func (c *StoreConfig) Initialize() {
+func (c *ElasticStore) Initialize() {
 	// Gather the CA certificate
 	c.gatherCert(c.Location)
 
-	// StoreConfigure Elasticsearch
+	// ElasticStoreure Elasticsearch
 	c.ConfigureES()
 
 	// Create Elasticsearch client
 	c.createClient()
 }
 
-func (c *StoreConfig) gatherCert(location string) ([]byte, error) {
+func (c *ElasticStore) gatherCert(location string) ([]byte, error) {
 	caCert, err := os.ReadFile(location) // Replace with the path to your CA certificate
 	if err != nil {
 		log.Fatalf("Error reading CA certificate: %s", err)
@@ -109,8 +109,8 @@ func (c *StoreConfig) gatherCert(location string) ([]byte, error) {
 	return caCert, err
 }
 
-func (c *StoreConfig) ConfigureES() {
-	// Elasticsearch StoreConfiguration
+func (c *ElasticStore) ConfigureES() {
+	// Elasticsearch ElasticStoreuration
 	cfg := elasticsearch8.Config{
 		Addresses: []string{
 			c.Address, // If running Go app locally
@@ -124,7 +124,7 @@ func (c *StoreConfig) ConfigureES() {
 	c.cfg = cfg
 }
 
-func (c *StoreConfig) createClient() (*elasticsearch8.Client, error) {
+func (c *ElasticStore) createClient() (*elasticsearch8.Client, error) {
 	// Create Elasticsearch client
 	es, err := elasticsearch8.NewClient(c.cfg)
 	if err != nil {
@@ -134,7 +134,7 @@ func (c *StoreConfig) createClient() (*elasticsearch8.Client, error) {
 	return es, err
 }
 
-func (c *StoreConfig) CreateIndices(indicies ...Index) {
+func (c *ElasticStore) CreateIndices(indicies ...Index) {
 	for _, id := range indicies {
 		_, err := c.es.Indices.Create(
 			id.Name,
@@ -147,7 +147,7 @@ func (c *StoreConfig) CreateIndices(indicies ...Index) {
 	}
 }
 
-func (c *StoreConfig) InsertDocument(index string, body map[string]interface{}) {
+func (c *ElasticStore) InsertDocument(index string, body map[string]interface{}) {
 	doc := body
 	docJSON, _ := json.Marshal(doc)
 	res, err := c.es.Index(index, bytes.NewReader(docJSON))
@@ -159,14 +159,14 @@ func (c *StoreConfig) InsertDocument(index string, body map[string]interface{}) 
 	fmt.Println("Document indexed successfully")
 }
 
-func (c *StoreConfig) refreshIndex(index string) {
+func (c *ElasticStore) refreshIndex(index string) {
 	_, err := c.es.Indices.Refresh(c.es.Indices.Refresh.WithIndex(index))
 	if err != nil {
 		log.Fatalf("Error refreshing index: %s", err)
 	}
 }
 
-func (c *StoreConfig) Query(index string, query string) (r map[string]interface{}) {
+func (c *ElasticStore) Query(index string, query string) (r map[string]interface{}) {
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(query); err != nil {
 		log.Fatalf("Error encoding query: %s", err)
@@ -190,7 +190,7 @@ func (c *StoreConfig) Query(index string, query string) (r map[string]interface{
 	return
 }
 
-func (c *StoreConfig) GetResults(searchResult map[string]interface{}) []map[string]interface{} {
+func (c *ElasticStore) GetResults(searchResult map[string]interface{}) []map[string]interface{} {
 	count := searchResult["hits"].(map[string]interface{})["total"].(map[string]interface{})["value"].(float64)
 	res := make([]map[string]interface{}, int(count))
 	index := 0
@@ -204,7 +204,7 @@ func (c *StoreConfig) GetResults(searchResult map[string]interface{}) []map[stri
 	return res
 }
 
-func (c *StoreConfig) PrintResults(searchResult map[string]interface{}) {
+func (c *ElasticStore) PrintResults(searchResult map[string]interface{}) {
 	for _, hit := range searchResult["hits"].(map[string]interface{})["hits"].([]interface{}) {
 
 		// Parse the attributes/fields of the document
@@ -221,7 +221,7 @@ func (c *StoreConfig) PrintResults(searchResult map[string]interface{}) {
 	} // end of response iteration
 }
 
-func (c *StoreConfig) DeleteByQuery(indexName string, query string) {
+func (c *ElasticStore) DeleteByQuery(indexName string, query string) {
 	// Perform the DeleteByQuery request
 	res, err := c.es.DeleteByQuery(
 		[]string{indexName},                                  // The index from which to delete documents
@@ -234,7 +234,7 @@ func (c *StoreConfig) DeleteByQuery(indexName string, query string) {
 	defer res.Body.Close()
 }
 
-func (c *StoreConfig) DeleteIndex(indexName string) {
+func (c *ElasticStore) DeleteIndex(indexName string) {
 	// Perform the DeleteIndex request
 	res, err := c.es.Indices.Delete(
 		[]string{indexName}, // Index names

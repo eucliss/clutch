@@ -65,7 +65,7 @@ type Config struct {
 	Server   ServerConfig          `yaml:"server"`
 	Database DatabaseConfig        `yaml:"database"`
 	Services []string              `yaml:"services"`
-	Store    store.StoreConfig     `yaml:"store"`
+	Store    store.Store           `yaml:"store"`
 	Masks    map[string]MaskConfig `yaml:"masks"`
 }
 
@@ -82,7 +82,7 @@ func (c *Config) SetDbConfig(cfg DatabaseConfig) {
 	c.Database = cfg
 }
 
-func (c *Config) SetStoreConfig(cfg store.StoreConfig) {
+func (c *Config) SetStoreConfig(cfg store.Store) {
 	globalMutex.Lock()
 	defer globalMutex.Unlock()
 	c.Store = cfg
