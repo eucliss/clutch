@@ -139,8 +139,6 @@ func main() {
 	`)
 	fmt.Println(store.GetResults(docs))
 
-	return
-
 	// Start the services
 	go services.Distribute(&common.Pipeline)
 	// Initialize the receiver to get events from websocket
