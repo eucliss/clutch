@@ -1,7 +1,9 @@
 package model
 
-import "fmt"
+type Model struct {
+	URL       string
+	ModelName string
+}
 
-func main() {
-	fmt.Println("Hello, World!")
+func Initialize() {
 }

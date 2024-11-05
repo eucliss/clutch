@@ -67,41 +67,11 @@ func InitializeStore(cfg *common.DatabaseConfig) (store.Store, error) {
 	}
 }
 
-func InitializeElastic(def common.Config) (c store.ElasticStore, res *store.ElasticStore) {
-	fmt.Println("Initializing Elasticsearch...")
-
-	c = store.ElasticStore{
-		Location: def.Database.CertLocation,
-		Address:  fmt.Sprintf("https://%s:%s", def.Database.Host, def.Database.Port),
-	}
-	c.SetUsername(def.Database.User)
-	c.SetPassword(def.Database.Password)
-	c.Initialize()
-
-	res = &c
-	return
-}
-
 func DeleteIndex(c store.Store, index string) {
 	c.DeleteIndex(index)
 }
 
-func InitializeQdrant(def common.Config) (c store.QdrantStore, res *store.QdrantStore) {
-	fmt.Println("Initializing Qdrant...")
-
-	c = store.QdrantStore{
-		Host: def.Database.Host,
-		Port: def.Database.Port,
-	}
-
-	c.Initialize()
-
-	res = &c
-	return
-}
-
 func main() {
-
 	// Load the base config
 	base_config, err := config.LoadCommonConfig()
 	// Set the common config value for use across the program
@@ -113,13 +83,6 @@ func main() {
 	}
 	fmt.Println("Common.config loaded")
 
-	// store, _ := InitializeQdrant(*cfg)
-	// fmt.Println("Store initialized", store)
-
-	// Initialize the Elasticsearch client
-	// store, _ := InitializeElastic(*cfg)
-	// fmt.Println("Elasticsearch Configured")
-
 	store, err := InitializeStore(&cfg.Database)
 	if err != nil {
 		fmt.Println("Error initializing store:", err)
@@ -130,15 +93,9 @@ func main() {
 
 	// Perform a query to test the connection
 	fmt.Println("Querying the DB")
-	docs := store.Query("clutch_testing_events", `
-		{
-			"query": {
-				"match_all": {}
-			}
-		}
-	`)
-	fmt.Println(store.GetResults(docs))
-
+	docs := store.Query("clutch_testing_events", "")
+	fmt.Println("Query results:", docs)
+	// return
 	// Start the services
 	go services.Distribute(&common.Pipeline)
 	// Initialize the receiver to get events from websocket
