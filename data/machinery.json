@@ -1,7 +1,12 @@
 {
     "timestamp": "2024-01-01T00:00:00Z",
-    "machine_id": "1234567890",
-    "machine_type": "harvester",
+    "machine_id": "4",
+    "machine_type": "planter",
     "location": "field_1",
-    "status": "running"
+    "status": "running",
+    "details": {
+        "manufacturer": "Testing",
+        "model": "ABCDE",
+        "serial_number": "1234567890"
+    }
 }

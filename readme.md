@@ -49,6 +49,14 @@ services:
 
 ```
 
+## Starting Ollama 3.2
+
+https://github.com/ollama/ollama?tab=readme-ov-file
+
+```bash 
+ollama run llama3.2
+```
+
 ## Starting QDrant Service
 
 ```bash

@@ -60,6 +60,11 @@ type DatabaseConfig struct {
 	NewIndex     string `yaml:"new_index_on_launch"`
 }
 
+type ModelConfig struct {
+	URL       string `yaml:"url"`
+	ModelName string `yaml:"model_name"`
+}
+
 // Struct to represent the full configuration
 type Config struct {
 	Server   ServerConfig          `yaml:"server"`
@@ -67,6 +72,7 @@ type Config struct {
 	Services []string              `yaml:"services"`
 	Store    store.Store           `yaml:"store"`
 	Masks    map[string]MaskConfig `yaml:"masks"`
+	Model    ModelConfig           `yaml:"model"`
 }
 
 // GetConfig returns a copy of the global configuration
