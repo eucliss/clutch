@@ -11,38 +11,38 @@ import (
 	"clutch/store"
 )
 
-func CreateIndex(index string) {
-	newIndex := store.Index{
-		Name: index,
-		Mapping: `
-		{
-		  "settings": {
-			"number_of_shards": 1
-		  },
-		  "mappings": {
-			"properties": {
-			  "Name": {
-				"type": "text"
-			  },
-			  "Description": {
-				"type": "text"
-			  },
-			  "Hostname": {
-				"type": "text"
-			  },
-			  "Time": {
-				"type": "text"
-			  }
-			}
-		  }
-		}`,
-	}
-	c := common.GetConfig()
-	c.Store.CreateIndices(newIndex)
-}
+// func CreateIndex(index string) {
+// 	newIndex := store.Index{
+// 		Name: index,
+// 		Mapping: `
+// 		{
+// 		  "settings": {
+// 			"number_of_shards": 1
+// 		  },
+// 		  "mappings": {
+// 			"properties": {
+// 			  "Name": {
+// 				"type": "text"
+// 			  },
+// 			  "Description": {
+// 				"type": "text"
+// 			  },
+// 			  "Hostname": {
+// 				"type": "text"
+// 			  },
+// 			  "Time": {
+// 				"type": "text"
+// 			  }
+// 			}
+// 		  }
+// 		}`,
+// 	}
+// 	c := common.GetConfig()
+// 	c.Store.CreateIndices(newIndex)
+// }
 
 // Add a new factory function
-func InitializeStore(cfg *common.DatabaseConfig) (store.Store, error) {
+func InitializeStore(cfg *common.DatabaseConfig) (common.Store, error) {
 	switch cfg.Type {
 	case "elastic":
 		fmt.Println("Initializing Elasticsearch...")
@@ -67,7 +67,7 @@ func InitializeStore(cfg *common.DatabaseConfig) (store.Store, error) {
 	}
 }
 
-func DeleteIndex(c store.Store, index string) {
+func DeleteIndex(c common.Store, index string) {
 	c.DeleteIndex(index)
 }
 
@@ -97,7 +97,7 @@ func main() {
 	fmt.Println("Query results:", docs)
 	// return
 	// Start the services
-	go services.Distribute(&common.Pipeline)
+	go services.Start(&common.Pipeline)
 	// Initialize the receiver to get events from websocket
 	r := receiver.NewReceiver()
 	// Start the receiver

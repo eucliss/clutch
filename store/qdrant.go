@@ -1,6 +1,7 @@
 package store
 
 import (
+	"clutch/common"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -8,7 +9,6 @@ import (
 	"strconv"
 
 	"github.com/qdrant/go-client/qdrant"
-	"github.com/tmc/langchaingo/llms/ollama"
 )
 
 type QdrantStore struct {
@@ -17,31 +17,6 @@ type QdrantStore struct {
 	Port             string
 	CollectionSizes  map[string]int
 	CollectionCounts map[string]int
-}
-
-const (
-	OllamaURL = "http://localhost:11434"
-	ModelName = "nomic-embed-text"
-)
-
-// Add this method to generate embeddings
-func generateEmbeddings(text string) ([][]float32, error) {
-
-	client, err := ollama.New(
-		ollama.WithServerURL(OllamaURL),
-		ollama.WithModel(ModelName),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create Ollama client: %v", err)
-	}
-
-	embeddings, err := client.CreateEmbedding(context.Background(), []string{text})
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate embeddings: %v", err)
-	}
-
-	fmt.Println("Length of embeddings:", len(embeddings[0]))
-	return embeddings, nil
 }
 
 func (s *QdrantStore) Initialize() {
@@ -60,24 +35,6 @@ func (s *QdrantStore) Initialize() {
 	}
 	s.Client = client
 }
-
-// func (s *QdrantStore) Initialize() *qdrant.Client {
-// 	fmt.Println("Initializing Qdrant client")
-// 	// The Go client uses Qdrant's gRPC interface
-// 	port, err := strconv.Atoi(s.Port)
-// 	if err != nil {
-// 		log.Fatalf("Failed to convert port to integer: %v", err)
-// 	}
-// 	client, err := qdrant.NewClient(&qdrant.Config{
-// 		Host: s.Host,
-// 		Port: port,
-// 	})
-// 	if err != nil {
-// 		log.Fatalf("Failed to create Qdrant client: %v", err)
-// 	}
-// 	s.Client = client
-// 	return client
-// }
 
 func (s *QdrantStore) CheckCollectionExists(collectionName string) (bool, error) {
 	return s.Client.CollectionExists(context.Background(), collectionName)
@@ -110,7 +67,7 @@ func (s *QdrantStore) InsertDocument(index string, body map[string]interface{}) 
 
 	// Create flattened map
 	flattenedBody := make(map[string]interface{})
-	flattenMap(flattenedBody, "", body)
+	common.FlattenMap(flattenedBody, "", body)
 
 	// Convert document to string for embedding
 	jsonStr, err := json.Marshal(flattenedBody)
@@ -119,8 +76,10 @@ func (s *QdrantStore) InsertDocument(index string, body map[string]interface{}) 
 		return
 	}
 
+	cfg := common.GetConfig()
+	model := cfg.Model
 	// Generate embeddings
-	embeddings, err := generateEmbeddings(string(jsonStr))
+	embeddings, err := model.GenerateEmbeddings(string(jsonStr))
 	if err != nil {
 		log.Printf("Error generating embeddings: %v", err)
 		return
@@ -151,19 +110,11 @@ func (s *QdrantStore) InsertDocument(index string, body map[string]interface{}) 
 			},
 		},
 	})
-	fmt.Println("Result:", res)
-	if err != nil {
+	if err != nil || res.Status != qdrant.UpdateStatus_Acknowledged {
 		log.Printf("Error upserting document: %v", err)
 		return
 	}
-	fmt.Println("---------- Done Inserting ----------")
-	return
-}
-
-// ... existing code ...
-func (s *QdrantStore) CreateIndices(indices ...Index) {
-	// For Qdrant, this might be a no-op since collections/indices are typically
-	// created during initialization
+	fmt.Println("---------- Done Inserting into Qdrant ----------")
 	return
 }
 
@@ -205,30 +156,6 @@ func (s *QdrantStore) GetResults(searchResult map[string]interface{}) (res []map
 	return nil
 }
 
-func flattenMap(result map[string]interface{}, prefix string, m map[string]interface{}) {
-	for k, v := range m {
-		key := k
-		if prefix != "" {
-			key = prefix + "." + k
-		}
-
-		switch val := v.(type) {
-		case map[string]interface{}:
-			flattenMap(result, key, val)
-		case []interface{}:
-			for i, arrayVal := range val {
-				if subMap, ok := arrayVal.(map[string]interface{}); ok {
-					flattenMap(result, fmt.Sprintf("%s.%d", key, i), subMap)
-				} else {
-					result[fmt.Sprintf("%s.%d", key, i)] = arrayVal
-				}
-			}
-		default:
-			result[key] = v
-		}
-	}
-}
-
 // func (s *QdrantStore) Test() {
 // 	fmt.Println("Testing Qdrant client")
 // 	// s.Client.CreateCollection(context.Background(), &qdrant.CreateCollection{
@@ -264,20 +191,4 @@ func flattenMap(result map[string]interface{}, prefix string, m map[string]inter
 // 		panic(err)
 // 	}
 // 	fmt.Println(operationInfo)
-// }
-
-// type StoreConfig struct {
-// 	Location string // "db/http_ca.crt"
-// 	Address  string // "https://localhost:9200"
-// 	username string
-// 	password string
-// 	cfg      elasticsearch8.Config
-// 	caCert   []byte
-// 	es       *elasticsearch8.Client
-// 	indicies []string
-// }
-
-// type Index struct {
-// 	Name    string
-// 	Mapping string
 // }
