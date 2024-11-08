@@ -12,10 +12,10 @@ The clutch software:
 <!-- - Correlates it -->
 <!-- - Visualizes it -->
 - Allows for:
-    - Masking
-    - Synthesizing
-    - Anonymizing (Faking package)
-    - Monitoring
+    - x - Masking 
+    - x - Synthesizing
+    - Anonymizing (Maybe use something like the faking package but I think LLM)
+    - Monitoring 
     - Alerting
     - ML on top
 
@@ -24,6 +24,15 @@ The clutch software:
         - Given a situation (i.e. anamolous weather occured in a 30d period which included strong winds and heavy consistent rain, etc)
         - Generate a synthetic dataset which emulates this situation and runs alerting mechanisms on top of it
         - Describe the impact the simulated data shows
+
+To Do Next:
+- Add RAG similar to here (https://github.com/hantmac/langchaingo-ollama-rag/blob/main/rag/ollama.go)
+- Build out the model file and stuff for use outside of the storage
+- Refine Qdrant cod and the interface for DBs
+- Use LLM to build out simulations based on the data
+- Add a service to handle the RAG
+- Build tests
+
 
 ## Defining the config
 
@@ -44,6 +53,8 @@ database:
 
 services:
   - storage
+    -elastic
+    -qdrant (vectors for RAG)
   - masking
   - mask_storage
 

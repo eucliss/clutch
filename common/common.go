@@ -1,7 +1,8 @@
 package common // or your main package name
 
 import (
-	"clutch/store"
+	"clutch/model"
+	"fmt"
 	"sync"
 )
 
@@ -25,6 +26,14 @@ var (
 )
 
 type M map[string]interface{}
+
+type Store interface {
+	InsertDocument(index string, body map[string]interface{})
+	Query(index string, query string) (r map[string]interface{})
+	DeleteIndex(index string)
+	Initialize()
+	GetResults(searchResult map[string]interface{}) (res []map[string]interface{})
+}
 
 // Event struct for your event channel
 type Event struct {
@@ -60,19 +69,20 @@ type DatabaseConfig struct {
 	NewIndex     string `yaml:"new_index_on_launch"`
 }
 
-type ModelConfig struct {
-	URL       string `yaml:"url"`
-	ModelName string `yaml:"model_name"`
-}
-
 // Struct to represent the full configuration
 type Config struct {
 	Server   ServerConfig          `yaml:"server"`
 	Database DatabaseConfig        `yaml:"database"`
 	Services []string              `yaml:"services"`
-	Store    store.Store           `yaml:"store"`
+	Store    Store                 `yaml:"store"`
 	Masks    map[string]MaskConfig `yaml:"masks"`
-	Model    ModelConfig           `yaml:"model"`
+	Model    model.Model           `yaml:"model"`
+}
+
+func GetConfigAddress() *Config {
+	globalMutex.Lock()
+	defer globalMutex.Unlock()
+	return &GlobalConfig
 }
 
 // GetConfig returns a copy of the global configuration
@@ -88,10 +98,16 @@ func (c *Config) SetDbConfig(cfg DatabaseConfig) {
 	c.Database = cfg
 }
 
-func (c *Config) SetStoreConfig(cfg store.Store) {
+func (c *Config) SetStoreConfig(cfg Store) {
 	globalMutex.Lock()
 	defer globalMutex.Unlock()
 	c.Store = cfg
+}
+
+func (c *Config) SetModelConfig(cfg model.Model) {
+	globalMutex.Lock()
+	defer globalMutex.Unlock()
+	c.Model = cfg
 }
 
 // SetConfig updates the global configuration
@@ -99,4 +115,28 @@ func SetConfig(cfg Config) {
 	globalMutex.Lock()
 	defer globalMutex.Unlock()
 	GlobalConfig = cfg
+}
+
+func FlattenMap(result map[string]interface{}, prefix string, m map[string]interface{}) {
+	for k, v := range m {
+		key := k
+		if prefix != "" {
+			key = prefix + "." + k
+		}
+
+		switch val := v.(type) {
+		case map[string]interface{}:
+			FlattenMap(result, key, val)
+		case []interface{}:
+			for i, arrayVal := range val {
+				if subMap, ok := arrayVal.(map[string]interface{}); ok {
+					FlattenMap(result, fmt.Sprintf("%s.%d", key, i), subMap)
+				} else {
+					result[fmt.Sprintf("%s.%d", key, i)] = arrayVal
+				}
+			}
+		default:
+			result[key] = v
+		}
+	}
 }

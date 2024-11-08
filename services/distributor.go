@@ -2,11 +2,23 @@ package services
 
 import (
 	"clutch/common"
+	"clutch/model"
 	"clutch/services/mask"
 	"clutch/services/storage"
 	"clutch/services/synth"
 	"fmt"
 )
+
+func InitializeModel() {
+	cfg := common.GetConfigAddress()
+	model, err := model.NewModel(cfg.Model.URL, cfg.Model.ModelName)
+	if err != nil {
+		fmt.Println("Error creating model:", err)
+	}
+
+	cfg.SetModelConfig(model)
+	fmt.Println("Model initialized:", model)
+}
 
 func prime() {
 	cfg := common.GetConfig()
@@ -24,6 +36,8 @@ func prime() {
 	for _, service := range cfg.Services {
 		fmt.Println("Starting service:", service)
 		switch service {
+		case "model":
+			go InitializeModel()
 		case "storage":
 			go storage.Store(&common.StorageChan)
 		case "masking":
@@ -34,7 +48,7 @@ func prime() {
 	}
 }
 
-func Distribute(pipeline *chan common.Event) {
+func Start(pipeline *chan common.Event) {
 	fmt.Println("Distributor started, priming services.")
 	prime()
 	for event := range *pipeline {
