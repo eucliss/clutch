@@ -6,6 +6,7 @@ import (
 	"clutch/services/mask"
 	"clutch/services/storage"
 	"clutch/services/synth"
+	"encoding/json"
 	"fmt"
 )
 
@@ -18,6 +19,23 @@ func InitializeModel() {
 
 	cfg.SetModelConfig(model)
 	fmt.Println("Model initialized:", model)
+
+	// Testing the model quick
+	var c = map[string]interface{}{
+		"machine_id": "4",
+	}
+	flattenedBody := make(map[string]interface{})
+	common.FlattenMap(flattenedBody, "", c)
+
+	// Convert document to string for embedding
+	jsonStr, err := json.Marshal(flattenedBody)
+	q := fmt.Sprintf("What field is this machine in? %s", string(jsonStr))
+	fmt.Println("Question:", q)
+	res, err := model.Ask(string(jsonStr))
+	if err != nil {
+		fmt.Println("Error asking model:", err)
+	}
+	fmt.Println("Model response:", res)
 }
 
 func prime() {

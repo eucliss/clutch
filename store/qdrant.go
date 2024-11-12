@@ -8,10 +8,13 @@ import (
 	"log"
 	"strconv"
 
-	"github.com/qdrant/go-client/qdrant"
+	qdrant "github.com/qdrant/go-client/qdrant"
+	"github.com/tmc/langchaingo/schema"
+	"github.com/tmc/langchaingo/vectorstores"
 )
 
 type QdrantStore struct {
+	Store            vectorstores.VectorStore
 	Client           *qdrant.Client
 	Host             string
 	Port             string
@@ -27,13 +30,39 @@ func (s *QdrantStore) Initialize() {
 		log.Fatalf("Failed to convert port to integer: %v", err)
 	}
 	client, err := qdrant.NewClient(&qdrant.Config{
-		Host: s.Host,
-		Port: port,
+		Host:   s.Host,
+		Port:   port,
+		UseTLS: false, // Set to true if using TLS
 	})
 	if err != nil {
 		log.Fatalf("Failed to create Qdrant client: %v", err)
 	}
 	s.Client = client
+
+	// options := []vectorstores.Option{
+	// 	vectorstores.WithScoreThreshold(0.80),
+	// }
+	// cfg := common.GetConfig()
+	// model := cfg.Model
+	// embedder, err := embeddings.NewEmbedder(embeddings.EmbedderClientFunc(model))
+	// if err != nil {
+	// 	log.Fatalf("Failed to create embedding model: %v", err)
+	// }
+
+	// parsedURL, err := url.Parse(s.Host)
+	// if err != nil {
+	// 	log.Fatalf("Failed to parse URL: %v", err)
+	// }
+	// store, err := vqdrant.New(
+	// 	vqdrant.WithURL(*parsedURL),
+	// 	vqdrant.WithCollectionName("clutch_testing_events"),
+	// 	vqdrant.WithEmbedder(embedder),
+	// )
+	// if err != nil {
+	// 	log.Fatalf("Failed to create Qdrant store: %v", err)
+	// }
+	// s.Store = store
+	// fmt.Println("---------- Done Initializing Qdrant with VectorStore ----------")
 }
 
 func (s *QdrantStore) CheckCollectionExists(collectionName string) (bool, error) {
@@ -99,7 +128,32 @@ func (s *QdrantStore) InsertDocument(index string, body map[string]interface{}) 
 		}
 	}
 
+	// io_reader := strings.NewReader(string(jsonStr))
+	// txtLoader := documentloaders.NewText(io_reader)
+	// doc, err := txtLoader.Load(context.Background())
+	// if err != nil {
+	// 	log.Printf("Error loading document: %v", err)
+	// 	return
+	// }
+	doc := []schema.Document{
+		{
+			PageContent: string(jsonStr),
+			Metadata:    body,
+		},
+	}
+	fmt.Println("Doc:", doc)
+	fmt.Println(model.Store)
+	fmt.Println("---------- Adding documents ----------")
+	store_res, store_err := model.Store.AddDocuments(context.Background(), doc)
+	if store_err != nil {
+		log.Printf("Error adding documents: %v", err)
+		return
+	}
+	fmt.Println("store res:", store_res)
+	fmt.Println("---------- Done Adding documents ----------")
 	// Insert document with embeddings
+	return
+
 	res, err := s.Client.Upsert(context.Background(), &qdrant.UpsertPoints{
 		CollectionName: index,
 		Points: []*qdrant.PointStruct{
@@ -118,7 +172,44 @@ func (s *QdrantStore) InsertDocument(index string, body map[string]interface{}) 
 	return
 }
 
+func (s *QdrantStore) Match(collectionName string, query string) (r map[string]interface{}) {
+	filter := qdrant.Filter{
+		Must: []*qdrant.Condition{
+			qdrant.NewMatch("location", "field_1"),
+		},
+	}
+
+	res, err := s.Client.QueryBatch(context.Background(), &qdrant.QueryBatchPoints{
+		CollectionName: collectionName,
+		QueryPoints: []*qdrant.QueryPoints{
+			{
+				CollectionName: collectionName,
+				Filter:         &filter,
+			},
+		},
+	})
+	if err != nil {
+		log.Printf("Error querying collection: %v", err)
+		return nil
+	}
+
+	return map[string]interface{}{
+		"results": res,
+	}
+}
+
 func (s *QdrantStore) Query(collectionName string, query string) (r map[string]interface{}) {
+	// Get 80 confidence docs
+	// optionsVector := []vectorstores.Option{
+	// 	vectorstores.WithScoreThreshold(0.80),
+	// }
+	// // Create a vector store from the client first
+	// store := vectorstores.NewQdrant(s.Client, optionsVector...)
+	// // Then create the retriever from the store
+	// retriever := vectorstores.ToRetriever(store, 10)
+	// // build retriever
+	// retriever := vectorstores.ToRetriever(s.Client, 10, optionsVector...)
+
 	filter := qdrant.Filter{
 		Must: []*qdrant.Condition{
 			qdrant.NewMatch("location", "field_1"),

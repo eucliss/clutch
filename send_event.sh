@@ -16,7 +16,7 @@ fi
 JSON_CONTENT=$(cat "$JSON_FILE" | tr -d '\n' | tr -d '\r')
 
 # Construct the payload
-PAYLOAD="{\"type\":\"clutch_testing_events\",\"payload\":$JSON_CONTENT}"
+PAYLOAD="{\"type\":\"new_collection_testing\",\"payload\":$JSON_CONTENT}"
 # Send the payload to the WebSocket server using websocat
 echo "$PAYLOAD" | websocat "$WS_URL"
 

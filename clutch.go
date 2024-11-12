@@ -93,7 +93,7 @@ func main() {
 
 	// Perform a query to test the connection
 	fmt.Println("Querying the DB")
-	docs := store.Query("clutch_testing_events", "")
+	docs := store.Query("new_collection_testing", "")
 	fmt.Println("Query results:", docs)
 	// return
 	// Start the services
@@ -102,6 +102,8 @@ func main() {
 	r := receiver.NewReceiver()
 	// Start the receiver
 	r.Receive()
+
+	// select {}
 
 	// Start the websocket server to listen for events
 	fmt.Println("Starting WebSocket server on :8080")
