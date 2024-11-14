@@ -1,7 +1,7 @@
 package common // or your main package name
 
 import (
-	"clutch/model"
+	"clutch/services/model"
 	"fmt"
 	"sync"
 )
@@ -14,6 +14,7 @@ var (
 	StorageChan       = make(chan Event, 1000)
 	MaskedStorageChan = make(chan Event, 1000)
 	SynthChan         = make(chan Event, 1000)
+	ChatChan          = make(chan Event, 1000)
 
 	// ErrorChan is a channel for sending errors throughout the program
 	ErrorChan = make(chan error, 100)

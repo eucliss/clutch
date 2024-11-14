@@ -2,8 +2,8 @@ package services
 
 import (
 	"clutch/common"
-	"clutch/model"
 	"clutch/services/mask"
+	"clutch/services/model"
 	"clutch/services/storage"
 	"clutch/services/synth"
 	"fmt"
@@ -11,11 +11,19 @@ import (
 
 func InitializeModel() {
 	cfg := common.GetConfigAddress()
-	model, err := model.NewModel(cfg.Model.URL, cfg.Model.ModelName)
+	fmt.Println("Config:", cfg.Model)
+	model, err := model.NewModel(
+		cfg.Model.URL,
+		cfg.Model.ModelName,
+		cfg.Model.EmbedderURL,
+		cfg.Model.EmbedderModelName,
+		cfg.Model.BasePrompt,
+	)
 	if err != nil {
 		fmt.Println("Error creating model:", err)
 	}
-
+	fmt.Println("TEsting model")
+	fmt.Println(model.QueryWithContext("What is the capital of France?", "Soup is the capital of France"))
 	cfg.SetModelConfig(model)
 	fmt.Println("Model initialized:", model)
 }
@@ -53,16 +61,20 @@ func Start(pipeline *chan common.Event) {
 	prime()
 	for event := range *pipeline {
 		fmt.Println("Distributing event:", event)
-		for _, service := range common.GlobalConfig.Services {
-			switch service {
-			case "storage":
-				common.StorageChan <- event
-			case "masking":
-				common.MaskChan <- event
-			case "synth":
-				common.SynthChan <- event
+		if event.Type == "chat" {
+			fmt.Println("Chat event:", event)
+			common.ChatChan <- event
+		} else {
+			for _, service := range common.GlobalConfig.Services {
+				switch service {
+				case "storage":
+					common.StorageChan <- event
+				case "masking":
+					common.MaskChan <- event
+				case "synth":
+					common.SynthChan <- event
+				}
 			}
-
 		}
 	}
 }

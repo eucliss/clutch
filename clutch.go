@@ -1,8 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
+	"time"
 
 	"clutch/common"
 	"clutch/config"
@@ -91,10 +93,6 @@ func main() {
 	// Update common config with the store config
 	cfg.SetStoreConfig(store)
 
-	// Perform a query to test the connection
-	fmt.Println("Querying the DB")
-	docs := store.Query("clutch_testing_events", "")
-	fmt.Println("Query results:", docs)
 	// return
 	// Start the services
 	go services.Start(&common.Pipeline)
@@ -102,6 +100,30 @@ func main() {
 	r := receiver.NewReceiver()
 	// Start the receiver
 	r.Receive()
+
+	// wait for time to sleep
+	fmt.Println("Sleeping for 10 seconds...")
+	time.Sleep(10 * time.Second)
+	fmt.Println("Continuing execution...")
+
+	// Perform a query to test the connection
+	fmt.Println("Querying the DB")
+	jsonQuery := map[string]interface{}{
+		"timestamp":    "2024-01-01T00:00:00Z",
+		"machine_id":   "4",
+		"machine_type": "planter",
+		"location":     "field_1",
+		"status":       "running",
+	}
+	jsonQueryString, err := json.Marshal(jsonQuery)
+	if err != nil {
+		fmt.Println("Error marshalling jsonQuery:", err)
+		return
+	}
+	fmt.Println("JSON Query:", string(jsonQueryString))
+	docs := store.Query("clutch_testing_events", string(jsonQueryString))
+	fmt.Println("Query results:", docs)
+	return
 
 	// Start the websocket server to listen for events
 	fmt.Println("Starting WebSocket server on :8080")

@@ -119,6 +119,20 @@ func (s *QdrantStore) InsertDocument(index string, body map[string]interface{}) 
 }
 
 func (s *QdrantStore) Query(collectionName string, query string) (r map[string]interface{}) {
+	// Filters
+	// ScoreThreshold
+	// Embedd Query
+	cfg := common.GetConfig()
+	model := cfg.Model
+	// Generate vector
+	vector, err := model.GenerateEmbeddings(query)
+	if err != nil {
+		log.Printf("Error generating embeddings: %v", err)
+		return
+	}
+	// fmt.Println("Vector:", vector)
+	// search points
+
 	filter := qdrant.Filter{
 		Must: []*qdrant.Condition{
 			qdrant.NewMatch("location", "field_1"),
@@ -138,6 +152,23 @@ func (s *QdrantStore) Query(collectionName string, query string) (r map[string]i
 		log.Printf("Error querying collection: %v", err)
 		return nil
 	}
+
+	limit := uint64(3)
+	results, err := s.Client.Query(context.Background(), &qdrant.QueryPoints{
+		CollectionName: collectionName,
+		Query:          qdrant.NewQuery(vector[0]...),
+		// Filter: &qdrant.Filter{
+		// 	Should: []*qdrant.Condition{
+		// 		qdrant.NewMatch("machine_id", "4"),
+		// 	},
+		// },
+		Limit: &limit,
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("Results: ", results)
 
 	return map[string]interface{}{
 		"results": res,

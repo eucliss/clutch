@@ -86,7 +86,40 @@ func (r *Receiver) HandleWebSocket(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
+func (r *Receiver) HandleChat(w http.ResponseWriter, req *http.Request) {
+	conn, err := r.upgrader.Upgrade(w, req, nil)
+	if err != nil {
+		fmt.Println("Failed to upgrade connection:", err)
+		return
+	}
+
+	for {
+		_, message, err := conn.ReadMessage()
+		if err != nil {
+			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+				fmt.Printf("Connection closed unexpectedly (HandleWebSocket): %v\n", err)
+			}
+			break
+		}
+
+		fmt.Println("Raw message: (HandleChat)", string(message))
+
+		var event common.Event
+		decoder := json.NewDecoder(bytes.NewReader(message))
+		decoder.UseNumber() // This helps preserve number precision
+		err = decoder.Decode(&event)
+		if err != nil {
+			fmt.Printf("Error decoding JSON: %v\n", err)
+			continue
+		}
+
+		fmt.Printf("Forwarding event to event channel (HandleWebSocket): %+v\n", event)
+		*r.eventChan <- event
+	}
+}
+
 func (r *Receiver) StartServer(addr string) error {
 	http.HandleFunc("/ws", r.HandleWebSocket)
+	http.HandleFunc("/chat", r.HandleChat)
 	return http.ListenAndServe(addr, nil)
 }
