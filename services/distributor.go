@@ -5,27 +5,17 @@ import (
 	"clutch/services/mask"
 	"clutch/services/model"
 	"clutch/services/storage"
-	"clutch/services/synth"
 	"fmt"
 )
 
 func InitializeModel() {
 	cfg := common.GetConfigAddress()
-	fmt.Println("Config:", cfg.Model)
-	model, err := model.NewModel(
-		cfg.Model.URL,
-		cfg.Model.ModelName,
-		cfg.Model.EmbedderURL,
-		cfg.Model.EmbedderModelName,
-		cfg.Model.BasePrompt,
-	)
+	model, err := model.InitializeModel(&cfg.ModelConfig)
 	if err != nil {
 		fmt.Println("Error creating model:", err)
 	}
-	fmt.Println("TEsting model")
-	fmt.Println(model.QueryWithContext("What is the capital of France?", "Soup is the capital of France"))
 	cfg.SetModelConfig(model)
-	fmt.Println("Model initialized:", model)
+	fmt.Println("Model initialized:", model.GetModelName())
 }
 
 func prime() {
@@ -50,8 +40,6 @@ func prime() {
 			go storage.Store(&common.StorageChan)
 		case "masking":
 			go mask.Mask(&common.MaskChan, mask_storage)
-		case "synth":
-			go synth.Synth(&common.SynthChan)
 		}
 	}
 }

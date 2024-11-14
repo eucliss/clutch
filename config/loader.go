@@ -10,6 +10,16 @@ import (
 
 var ConfigPath string
 
+func InitializeConfig() (bool, error) {
+	base_config, err := LoadCommonConfig()
+	if err != nil {
+		return false, err
+	}
+	// Set the common config value for use across the program
+	common.SetConfig(base_config)
+	return true, nil
+}
+
 func LoadMaskConfig(path string) (common.MaskConfig, error) {
 	fmt.Println("Loading mask config:", path)
 	file, err := os.Open(path)

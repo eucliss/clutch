@@ -1,6 +1,7 @@
 package model
 
 import (
+	"clutch/common"
 	"context"
 	"fmt"
 	"strings"
@@ -16,6 +17,42 @@ type Model struct {
 	Client            *ollama.LLM
 	Embedder          *ollama.LLM
 	BasePrompt        string `yaml:"base_prompt"`
+}
+
+func InitializeModel(cfg *common.BaseModelConfig) (common.ModelInterface, error) {
+	m := &Model{
+		URL:               cfg.URL,
+		ModelName:         cfg.ModelName,
+		EmbedderURL:       cfg.EmbedderURL,
+		EmbedderModelName: cfg.EmbedderModelName,
+		BasePrompt:        cfg.BasePrompt,
+	}
+	m.Start()
+	return m, nil
+}
+
+func (m *Model) Start() {
+	embedder, err := ollama.New(
+		ollama.WithServerURL(m.EmbedderURL),
+		ollama.WithModel(m.EmbedderModelName),
+	)
+	if err != nil {
+		fmt.Printf("failed to create Ollama client: %v", err)
+	}
+	m.Embedder = embedder
+
+	client, err := ollama.New(
+		ollama.WithServerURL(m.URL),
+		ollama.WithModel(m.ModelName),
+	)
+	if err != nil {
+		fmt.Printf("failed to create Ollama client: %v", err)
+	}
+	m.Client = client
+}
+
+func (m *Model) GetModelName() string {
+	return m.ModelName
 }
 
 // NewModel creates a new Model instance with optional URL and ModelName
