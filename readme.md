@@ -27,7 +27,7 @@ The clutch software:
 
 To Do Next:
 - Add RAG similar to here (https://github.com/hantmac/langchaingo-ollama-rag/blob/main/rag/ollama.go)
-- Build out the model file and stuff for use outside of the storage
+- x - Build out the model file and stuff for use outside of the storage
 - Refine Qdrant cod and the interface for DBs
 - Use LLM to build out simulations based on the data
 - Add a service to handle the RAG
