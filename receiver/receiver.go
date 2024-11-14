@@ -120,6 +120,6 @@ func (r *Receiver) HandleChat(w http.ResponseWriter, req *http.Request) {
 
 func (r *Receiver) StartServer(addr string) error {
 	http.HandleFunc("/ws", r.HandleWebSocket)
-	http.HandleFunc("/chat", r.HandleChat)
+	// http.HandleFunc("/chat", r.HandleChat)
 	return http.ListenAndServe(addr, nil)
 }

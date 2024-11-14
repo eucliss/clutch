@@ -1,7 +1,6 @@
 package common // or your main package name
 
 import (
-	"clutch/services/model"
 	"fmt"
 	"sync"
 )
@@ -27,6 +26,13 @@ var (
 )
 
 type M map[string]interface{}
+
+type ModelInterface interface {
+	GenerateEmbeddings(text string) ([][]float32, error)
+	QueryWithContext(query string, ctx string) (string, error)
+	Start()
+	GetModelName() string
+}
 
 type Store interface {
 	InsertDocument(index string, body map[string]interface{})
@@ -70,14 +76,23 @@ type DatabaseConfig struct {
 	NewIndex     string `yaml:"new_index_on_launch"`
 }
 
+type BaseModelConfig struct {
+	URL               string `yaml:"url"`
+	EmbedderURL       string `yaml:"embedder_url"`
+	EmbedderModelName string `yaml:"embedder_model_name"`
+	ModelName         string `yaml:"model_name"`
+	BasePrompt        string `yaml:"base_prompt"`
+}
+
 // Struct to represent the full configuration
 type Config struct {
-	Server   ServerConfig          `yaml:"server"`
-	Database DatabaseConfig        `yaml:"database"`
-	Services []string              `yaml:"services"`
-	Store    Store                 `yaml:"store"`
-	Masks    map[string]MaskConfig `yaml:"masks"`
-	Model    model.Model           `yaml:"model"`
+	Server      ServerConfig          `yaml:"server"`
+	Database    DatabaseConfig        `yaml:"database"`
+	Services    []string              `yaml:"services"`
+	Masks       map[string]MaskConfig `yaml:"masks"`
+	ModelConfig BaseModelConfig       `yaml:"model"`
+	Model       ModelInterface        `yaml:"-"`
+	Store       Store                 `yaml:"-"`
 }
 
 func GetConfigAddress() *Config {
@@ -105,7 +120,7 @@ func (c *Config) SetStoreConfig(cfg Store) {
 	c.Store = cfg
 }
 
-func (c *Config) SetModelConfig(cfg model.Model) {
+func (c *Config) SetModelConfig(cfg ModelInterface) {
 	globalMutex.Lock()
 	defer globalMutex.Unlock()
 	c.Model = cfg
