@@ -6,14 +6,21 @@ import (
 )
 
 var (
-	// EventChan is a channel for sending events throughout the program
-	EventChan         = make(chan Event, 1000)
-	Pipeline          = make(chan Event, 1000)
-	MaskChan          = make(chan Event, 1000)
-	StorageChan       = make(chan Event, 1000)
+	// Channels for sending events throughtout the services
+	// Base channel for ingest
+	EventChan = make(chan Event, 1000)
+	// All events go through the pipeline
+	Pipeline = make(chan Event, 1000)
+	// Masking Channel for masking events
+	MaskChan = make(chan Event, 1000)
+	// Storage Channel for storing events
+	StorageChan = make(chan Event, 1000)
+	// Masked Storage Channel for storing masked events
 	MaskedStorageChan = make(chan Event, 1000)
-	SynthChan         = make(chan Event, 1000)
-	ChatChan          = make(chan Event, 1000)
+	// Synthesis Channel for synthesis events
+	SynthChan = make(chan Event, 1000)
+	// Chat Channel for chat events
+	ChatChan = make(chan Event, 1000)
 
 	// ErrorChan is a channel for sending errors throughout the program
 	ErrorChan = make(chan error, 100)
@@ -25,6 +32,7 @@ var (
 	globalMutex sync.Mutex
 )
 
+// JSON Map type
 type M map[string]interface{}
 
 type ModelInterface interface {
@@ -40,6 +48,13 @@ type Store interface {
 	DeleteIndex(index string)
 	Initialize()
 	GetResults(searchResult map[string]interface{}) (res []map[string]interface{})
+}
+
+type Masker interface {
+	Mask(event Event, maskConfig MaskConfig) Event
+	Synthesize(event Event, maskConfig MaskConfig) Event
+	// Refactor this to just use common.Event as output
+	// MaskSingleEvent(event Event, maskConfig MaskConfig) MaskedEvent
 }
 
 // Event struct for your event channel
@@ -108,6 +123,13 @@ func GetConfig() Config {
 	return GlobalConfig
 }
 
+// SetConfig updates the global configuration
+func SetConfig(cfg Config) {
+	globalMutex.Lock()
+	defer globalMutex.Unlock()
+	GlobalConfig = cfg
+}
+
 func (c *Config) SetDbConfig(cfg DatabaseConfig) {
 	globalMutex.Lock()
 	defer globalMutex.Unlock()
@@ -124,13 +146,6 @@ func (c *Config) SetModelConfig(cfg ModelInterface) {
 	globalMutex.Lock()
 	defer globalMutex.Unlock()
 	c.Model = cfg
-}
-
-// SetConfig updates the global configuration
-func SetConfig(cfg Config) {
-	globalMutex.Lock()
-	defer globalMutex.Unlock()
-	GlobalConfig = cfg
 }
 
 func FlattenMap(result map[string]interface{}, prefix string, m map[string]interface{}) {

@@ -166,6 +166,7 @@ func Mask(maskChan *chan common.Event, mask_storage bool) {
 	}
 }
 
+// Refactor this to just use common.Event as output
 func MaskSingleEvent(event common.Event, maskMap map[string]common.MaskConfig) MaskedEvent {
 	fmt.Println("Masking single event:", event)
 	masks := common.GetConfig().Masks
